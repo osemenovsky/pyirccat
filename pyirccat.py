@@ -27,7 +27,7 @@ class IRCClient(object):
     def __init__(self, host, port, channel, nick, ssl_mode=False, ssl_no_verify=False, password=None):
         self.host = host
         self.port = port
-        self.channel = channel
+        self.channel = "#{}".format(channel)
         self.nick = nick
         self.ssl_mode = ssl_mode
         self.ssl_no_verify = ssl_no_verify
@@ -111,13 +111,16 @@ class IRCClient(object):
         if not raw:
             return None
 
-        r = re.match(r'#([\w\d_\-]+)\s{1}(.*)', raw)
+        r = re.match(r'([#@][\w\d_\-\.]+)\s{1}(.*)', raw)
         if r is None:
             return self.channel, raw
 
         # we wanted it sent to some other channel
-        channel, msg = r.groups()
-        return channel, msg
+        recipient, msg = r.groups()
+
+        recipient = recipient.lstrip("@")
+
+        return recipient, msg
 
     def received(self, msg):
         print '< %s' % msg.strip()
@@ -137,10 +140,10 @@ class IRCClient(object):
     # IRC commands
     # see RFC2812: https://tools.ietf.org/html/rfc2812
     def privmsg(self, channel, msg):
-        self._send('PRIVMSG #%s :%s' % (channel, msg))
+        self._send('PRIVMSG %s :%s' % (channel, msg))
 
     def join(self, channel):
-        self._send('JOIN #%s' % self.channel)
+        self._send('JOIN %s' % self.channel)
 
     def quit(self, msg=None):
         self._connected = False
